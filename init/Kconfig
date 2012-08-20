@@ -1184,6 +1184,10 @@ config LTO_DEBUG
 	bool "Enable LTO compile time debugging"
 	depends on LTO
 
+config LTO_CP_CLONE
+	bool "Allow aggressive cloning for constant specialization
+	depends on LTO
+
 config LTO_SLIM
 	bool "Use slim lto"
 	# need to fix modpost for it

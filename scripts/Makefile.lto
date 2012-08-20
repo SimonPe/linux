@@ -33,6 +33,10 @@ ifdef CONFIG_LTO_DEBUG
 	LTO_FINAL_CFLAGS += -dH -fdump-ipa-cgraph -fdump-ipa-inline-details # -Wl,-plugin-save-temps -save-temps
 	LTO_CFLAGS += 
 endif
+ifdef CONFIG_LTO_CP_CLONE
+	LTO_FINAL_CFLAGS += -fipa-cp-clone
+	LTO_CFLAGS += -fipa-cp-clone
+endif
 
 	# In principle gcc should pass through options in the object files,
 	# but it doesn't always work. So do it here manually
