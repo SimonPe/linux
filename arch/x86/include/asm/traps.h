@@ -6,11 +6,7 @@
 #include <asm/debugreg.h>
 #include <asm/siginfo.h>			/* TRAP_TRACE, ... */
 
-#ifdef CONFIG_X86_32
 #define dotraplinkage __visible
-#else
-#define dotraplinkage asmlinkage
-#endif
 
 asmlinkage void divide_error(void);
 asmlinkage void debug(void);
