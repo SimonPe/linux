@@ -53,11 +53,11 @@ vmlinux_link()
 	local lds="${objtree}/${KBUILD_LDS}"
 
 	if [ "${SRCARCH}" != "um" ]; then
-		${LDFINAL} ${LDFLAGS} ${LDFLAGS_vmlinux} -o ${2}                  \
+		${LDFINAL} -r ${LDFLAGS} ${LDFLAGS_vmlinux} -o ${2}          \
 			-T ${lds} ${KBUILD_VMLINUX_INIT}                     \
 			--start-group ${KBUILD_VMLINUX_MAIN} --end-group ${1}
 	else
-		${CC} ${CFLAGS_vmlinux} -o ${2}                              \
+		${CC} ${CFLAGS_vmlinux} -r -o ${2}                           \
 			-Wl,-T,${lds} ${KBUILD_VMLINUX_INIT}                 \
 			-Wl,--start-group                                    \
 				 ${KBUILD_VMLINUX_MAIN}                      \
@@ -67,6 +67,27 @@ vmlinux_link()
 	fi
 }
 
+# Update link of vmlinux
+# ${1} - extra .o file
+# ${2} - output file
+# ${3} - input file
+vmlinux_update()
+{
+	local lds="${objtree}/${KBUILD_LDS}"
+
+	if [ "${SRCARCH}" != "um" ]; then
+		${LD} ${LDFLAGS} ${LDFLAGS_vmlinux} -o ${2}          	    \
+			-T ${lds} --start-group ${3} --end-group ${1}
+	else
+		${CC} ${CFLAGS_vmlinux} -o ${2}                              \
+			-Wl,-T,${lds} 			                     \
+			-Wl,--start-group                                    \
+				 ${3}                      		     \
+			-Wl,--end-group                                      \
+			-lutil ${1}
+		rm -f linux
+	fi
+}
 
 # Create ${2} .o file with all symbols from the ${1} object file
 kallsyms()
@@ -155,7 +176,8 @@ if [ -n "${CONFIG_KALLSYMS}" ]; then
 
 	# kallsyms support
 	# Generate section listing all symbols and add it into vmlinux
-	# It's a three step process:
+	# It's a four step process:
+        # 0)  Prelink everything with -r. This also runs LTO.
 	# 1)  Link .tmp_vmlinux1 so it has all symbols and sections,
 	#     but __kallsyms is empty.
 	#     Running kallsyms on that gives us .tmp_kallsyms1.o with
@@ -175,14 +197,18 @@ if [ -n "${CONFIG_KALLSYMS}" ]; then
 	kallsymso=.tmp_kallsyms2.o
 	kallsyms_vmlinux=.tmp_vmlinux2
 
+	# step 0
+	info LDFINAL -r .tmp_vmlinux0
+	vmlinux_link "" .tmp_vmlinux0
+
 	# step 1
-	info LDFINAL .tmp_vmlinux1
-	vmlinux_link "" .tmp_vmlinux1
+	info LD .tmp_vmlinux1
+	vmlinux_update "" .tmp_vmlinux1 .tmp_vmlinux0
 	kallsyms .tmp_vmlinux1 .tmp_kallsyms1.o
 
 	# step 2
-	info LDFINAL .tmp_vmlinux2
-	vmlinux_link .tmp_kallsyms1.o .tmp_vmlinux2
+	info LD .tmp_vmlinux2
+	vmlinux_update .tmp_kallsyms1.o .tmp_vmlinux2 .tmp_vmlinux0
 	kallsyms .tmp_vmlinux2 .tmp_kallsyms2.o
 
 	# step 2a
@@ -190,14 +216,16 @@ if [ -n "${CONFIG_KALLSYMS}" ]; then
 		kallsymso=.tmp_kallsyms3.o
 		kallsyms_vmlinux=.tmp_vmlinux3
 
-		vmlinux_link .tmp_kallsyms2.o .tmp_vmlinux3
+		info LD .tmp_vmlinux3
+
+		vmlinux_update .tmp_kallsyms2.o .tmp_vmlinux3 .tmp_vmlinux0
 
 		kallsyms .tmp_vmlinux3 .tmp_kallsyms3.o
 	fi
 fi
 
-info LDFINAL vmlinux
-vmlinux_link "${kallsymso}" vmlinux
+info LD vmlinux
+vmlinux_update "${kallsymso}" vmlinux .tmp_vmlinux0
 
 if [ -n "${CONFIG_BUILDTIME_EXTABLE_SORT}" ]; then
 	info SORTEX vmlinux
