@@ -1185,7 +1185,7 @@ config LTO_DEBUG
 	depends on LTO
 
 config LTO_CP_CLONE
-	bool "Allow aggressive cloning for constant specialization
+	bool "Allow aggressive cloning for constant specialization"
 	depends on LTO
 
 config LTO_SLIM
