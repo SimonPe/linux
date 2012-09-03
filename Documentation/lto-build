@@ -18,10 +18,12 @@ sized vmlinux build about twice as long, much larger monolithic kernels
 like allyesconfig ~4x as long. Modular kernels are less affected.
 
 Normal "reasonable" builds work with less than 4GB of RAM, but very large
-configurations like allyesconfig can need upto 9GB. 
+configurations like allyesconfig may need more memory. The actual
+memory needed depends on the available memory (gcc sizes its garbage
+collector pools based on that or on the ulimit -m limits)
 
 Issues:
-- Various workarounds in kernel needed for toolchain problem.
+- Various workarounds in kernel needed for toolchain problems.
 - A few kernel features are currently incompatible with LTO, in particular
 function tracing, because they require special compiler flags for
 specific files, which is not supported in LTO right now.
@@ -39,7 +41,7 @@ because they are currently incompatible with LTO.
 yet.
 
 Requirements:
-- Enough memory: 4GB for a standard build, ~8GB for allyesconfig
+- Enough memory: 4GB for a standard build, more for allyesconfig
 If you are tight on memory and use tmpfs as /tmp define TMPDIR and 
 point it to a directory on disk.  The peak memory usage
 happens single threaded (when lto-wpa merges types), so dialing
@@ -56,6 +58,10 @@ in a non standard location use LD=... on the make line.
 
 - gcc 4.7 built with plugin ld (--with-plugin-ld) also pointing to the 
 linker from the Linux binutils and LTO 
+
+If the gcc is not built with this option it may also work to put the correct
+binutils linker first in $PATH when building. I haven't tested
+this however.
 
 Example build procedure for the tool chain and kernel. This does not 
 overwrite the standard compiler toolchain on the system. If you already
