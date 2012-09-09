@@ -10,7 +10,8 @@ endif
 
 # Make sure load_percpu_segment has no stackprotector
 nostackp := $(call cc-option, -fno-stack-protector)
-CFLAGS_common.o		:= $(nostackp)
+# symbols referrenced from linker script
+CFLAGS_common.o		= $(nostackp) $(DISABLE_SLIM_LTO)
 
 obj-y			:= intel_cacheinfo.o scattered.o topology.o
 obj-y			+= proc.o capflags.o powerflags.o common.o
