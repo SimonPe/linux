@@ -4,9 +4,11 @@
 
 DISABLE_LTO :=
 LTO_CFLAGS :=
+DISABLE_SLIM_LTO :=
 
 export DISABLE_LTO
 export LTO_CFLAGS
+export DISABLE_SLIM_LTO
 
 ifdef CONFIG_LTO
 ifeq ($(call cc-ifversion, -ge, 0407,y),y)
@@ -24,7 +26,7 @@ ifdef CONFIG_LTO_SLIM
 endif
 	DISABLE_LTO := -fno-lto
 
-	LTO_FINAL_CFLAGS += ${LTO_CFLAGS} -fwhole-program  
+	LTO_FINAL_CFLAGS += ${LTO_CFLAGS} -fwhole-program  -fmem-report -dH -flto-report
 
 	# workaround for http://gcc.gnu.org/PR50602
 	LTO_FINAL_CFLAGS += $(filter -freg-struct-return,${KBUILD_CFLAGS})
@@ -37,6 +39,8 @@ ifdef CONFIG_LTO_CP_CLONE
 	LTO_FINAL_CFLAGS += -fipa-cp-clone
 	LTO_CFLAGS += -fipa-cp-clone
 endif
+
+	DISABLE_SLIM_LTO := -ffat-lto-objects
 
 	# In principle gcc should pass through options in the object files,
 	# but it doesn't always work. So do it here manually
