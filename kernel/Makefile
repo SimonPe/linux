@@ -12,6 +12,9 @@ obj-y     = fork.o exec_domain.o panic.o printk.o \
 	    notifier.o ksysfs.o cred.o \
 	    async.o range.o groups.o lglock.o smpboot.o
 
+# symbol referred from linker file
+CFLAGS_timer.o = $(DISABLE_SLIM_LTO)
+
 ifdef CONFIG_FUNCTION_TRACER
 # Do not trace debug files and internal ftrace files
 CFLAGS_REMOVE_lockdep.o = -pg
@@ -21,6 +24,8 @@ CFLAGS_REMOVE_rtmutex-debug.o = -pg
 CFLAGS_REMOVE_cgroup-debug.o = -pg
 CFLAGS_REMOVE_irq_work.o = -pg
 endif
+
+CFLAGS_sys_ni.o = $(DISABLE_LTO)
 
 obj-y += sched/
 obj-y += power/

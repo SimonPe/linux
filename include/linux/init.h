@@ -47,6 +47,17 @@
 #define __exitdata	__section(.exit.data)
 #define __exit_call	__used __section(.exitcall.exit)
 
+/* 
+ * Some architecture have tool chains which do not handle rodata attributes
+ * correctly. For those disable special sections for const, so that other
+ * architectures can annotate correctly.
+ */
+#ifdef CONFIG_BROKEN_RODATA
+#define __constsection(x)
+#else
+#define __constsection(x) __section(x)
+#endif
+
 /*
  * Some architecture have tool chains which do not handle rodata attributes
  * correctly. For those disable special sections for const, so that other
@@ -176,6 +187,23 @@ extern bool initcall_debug;
 
 #ifndef __ASSEMBLY__
 
+#ifdef CONFIG_LTO
+/* Work around a LTO gcc problem: when there is no reference to a variable
+ * in a module it will be moved to the end of the program. This causes
+ * reordering of initcalls which the kernel does not like.
+ * Add a dummy reference function to avoid this. The function is 
+ * deleted by the linker.
+ */
+#define LTO_REFERENCE_INITCALL(x) \
+	; /* yes this is needed */			\
+	static __used __exit void *reference_##x(void) 	\
+	{						\
+		return &x;				\
+	}
+#else
+#define LTO_REFERENCE_INITCALL(x)
+#endif
+
 /* initcalls are now grouped by functionality into separate 
  * subsections. Ordering inside the subsections is determined
  * by link order. 
@@ -188,7 +216,8 @@ extern bool initcall_debug;
 
 #define __define_initcall(level,fn,id) \
 	static initcall_t __initcall_##fn##id __used \
-	__attribute__((__section__(".initcall" level ".init"))) = fn
+	__attribute__((__section__(".initcall" level ".init"))) = fn \
+	LTO_REFERENCE_INITCALL(__initcall_##fn##id)
 
 /*
  * Early initcalls run before initializing SMP.

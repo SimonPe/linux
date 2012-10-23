@@ -246,22 +246,22 @@ static void *section_objs(const struct load_info *info,
 }
 
 /* Provided by the linker */
-extern const struct kernel_symbol __start___ksymtab[];
-extern const struct kernel_symbol __stop___ksymtab[];
-extern const struct kernel_symbol __start___ksymtab_gpl[];
-extern const struct kernel_symbol __stop___ksymtab_gpl[];
-extern const struct kernel_symbol __start___ksymtab_gpl_future[];
-extern const struct kernel_symbol __stop___ksymtab_gpl_future[];
-extern const unsigned long __start___kcrctab[];
-extern const unsigned long __start___kcrctab_gpl[];
-extern const unsigned long __start___kcrctab_gpl_future[];
+extern __visible const struct kernel_symbol __start___ksymtab[];
+extern __visible const struct kernel_symbol __stop___ksymtab[];
+extern __visible const struct kernel_symbol __start___ksymtab_gpl[];
+extern __visible const struct kernel_symbol __stop___ksymtab_gpl[];
+extern __visible const struct kernel_symbol __start___ksymtab_gpl_future[];
+extern __visible const struct kernel_symbol __stop___ksymtab_gpl_future[];
+extern __visible const unsigned long __start___kcrctab[];
+extern __visible const unsigned long __start___kcrctab_gpl[];
+extern __visible const unsigned long __start___kcrctab_gpl_future[];
 #ifdef CONFIG_UNUSED_SYMBOLS
-extern const struct kernel_symbol __start___ksymtab_unused[];
-extern const struct kernel_symbol __stop___ksymtab_unused[];
-extern const struct kernel_symbol __start___ksymtab_unused_gpl[];
-extern const struct kernel_symbol __stop___ksymtab_unused_gpl[];
-extern const unsigned long __start___kcrctab_unused[];
-extern const unsigned long __start___kcrctab_unused_gpl[];
+extern __visible const struct kernel_symbol __start___ksymtab_unused[];
+extern __visible const struct kernel_symbol __stop___ksymtab_unused[];
+extern __visible const struct kernel_symbol __start___ksymtab_unused_gpl[];
+extern __visible const struct kernel_symbol __stop___ksymtab_unused_gpl[];
+extern __visible const unsigned long __start___kcrctab_unused[];
+extern __visible const unsigned long __start___kcrctab_unused_gpl[];
 #endif
 
 #ifndef CONFIG_MODVERSIONS
@@ -1944,6 +1944,13 @@ static int simplify_symbols(struct module *mod, const struct load_info *info)
 
 		switch (sym[i].st_shndx) {
 		case SHN_COMMON:
+			/* Ignore common symbols */
+			if (!strncmp(name, "__gnu_lto", 9)) {
+				printk("%s: module not link time optimized\n",
+				       mod->name);
+				break;
+			}
+
 			/* We compiled with -fno-common.  These are not
 			   supposed to happen.  */
 			pr_debug("Common symbol: %s\n", name);
